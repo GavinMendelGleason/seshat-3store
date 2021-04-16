@@ -290,7 +290,7 @@ if __name__ == "__main__":
         client.create_database(db_id, accountid="admin", label = "Seshat Databank Jim", description = "Create a graph with historical data")
     else:
         # updating data (and/or the schema)
-        client.db(db_id)
+        client.set_db(db_id)
 
     create_seshat_schema(client)
     save_schema_info((schema_declarations,variable_info,type_info))
