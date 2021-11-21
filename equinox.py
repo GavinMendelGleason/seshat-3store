@@ -74,17 +74,6 @@ basic_schema = [
      },
 
     { '@type' : 'Enum',
-      '@id' : 'EpistemicState',
-      '@value' : [
-          'known',
-          'unknown',
-          'inferred',
-          'suspected unknown',
-          'disputed'
-      ]
-     },
-
-    { '@type' : 'Enum',
       '@id' : 'Presence',
       '@value' : [
           'present',
@@ -103,7 +92,7 @@ basic_schema = [
      },
 
     { '@type' : 'Enum',
-      '@id' : 'DegreeOfCentralization',
+      '@id' : 'Centralization',
       '@value' : [
           'none',
           'nominal',
@@ -126,16 +115,9 @@ basic_schema = [
      },
 
     { '@type' : 'Class',
-      '@id' : 'EpistemicScope',
-      '@abstract' : [],
-      'epistemic_state' : {'@type' : 'Optional',
-                           '@class' : 'EpistemicState'}
-     },
-
-    { '@type' : 'Class',
       '@id' : 'TemporalScope',
       '@abstract' : [],
-      'date_range' : {'type' : 'Optional',
+      'date_range' : {'@type' : 'Optional',
                       '@class' : 'DateRange'}
      },
 
@@ -147,91 +129,86 @@ basic_schema = [
       'alternative names' : {'@type' : 'Set',
                              '@class' : 'xsd:string' },
       'location' : {'@type' : 'Optional',
-                    '@class' : 'GeoCoordinate'} },
+                    '@class' : 'GeoCoordinate'}
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'Value',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@inherits' : 'TemporalScope',
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'IntegerValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'xsd:integer'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'PresenceValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'xsd:integer'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'StringValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'xsd:string'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'DateRangeValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'DateRange'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'IntegerRangeValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'IntegerRange'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'CentralizationValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'Centralization'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'CapitalValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'City'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'SupraPolityRelationsValue',
+      '@subdocument' : [],
+      '@abstract' : [],
+      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      'value' : 'SupraPolityRelations'
+     },
 
     { '@type' : 'Class',
       '@id' : 'Variable',
       '@subdocument' : [],
       '@abstract' : [],
-      '@inherits' : ['TemporalScope', 'EpistemicScope'],
+      '@inherits' : [],
      },
-
-    { '@type' : 'Class',
-      '@id' : 'TemporalVariable',
-      '@subdocument' : [],
-      '@abstract' : [],
-      '@inherits' : ['TemporalScope'],
-     },
-
-    { '@type' : 'Class',
-      '@id' : 'EpistemicVariable',
-      '@subdocument' : [],
-      '@abstract' : [],
-      '@inherits' : ['EpistemicScope'],
-     },
-
-    { '@type' : 'Class',
-      '@id' : 'EpistemicTemporalVariable',
-      '@subdocument' : [],
-      '@abstract' : [],
-      '@inherits' : ['EpistemicVariable', 'TemporalVariable'],
-     },
-
-    { '@type' : 'Class',
-      '@id' : 'PresenceVariable',
-      '@subdocument' : [],
-      '@key' : {'@type' : 'Hash', '@fields' : ['value']},
-      '@inherits' : ['EpistemicTemporalVariable'],
-      'value' : 'Presence'
-     },
-
-    { '@type' : 'Class',
-      '@id' : 'DateRangeVariable',
-      '@subdocument' : [],
-      '@key' : {'@type' : 'Hash', '@fields' : ['value']},
-      '@inherits' : ['Variable'],
-      'value' : 'DateRange'
-     },
-
-    { '@type' : 'Class',
-      '@id' : 'IntegerRangeVariable',
-      '@subdocument' : [],
-      '@key' : {'@type' : 'Hash', '@fields' : ['value']},
-      '@inherits' : ['TemporalVariable'],
-      'value' : 'IntegerRange'
-     },
-
-    { '@type' : 'Class',
-      '@id' : 'CentralizationVariable',
-      '@subdocument' : [],
-      '@inherits' : ['EpistemicTemporalVariable'],
-      '@key' : {'@type' : 'Hash', '@fields' : ['value']},
-      'value' : 'DegreeOfCentralization'
-    },
-
-    { '@type' : 'Class',
-      '@id' : 'StringVariable',
-      '@subdocument' : [],
-      '@inherits' : ['TemporalVariable'],
-      '@key' : {'@type' : 'Hash', '@fields' : ['value']},
-      'value' : 'xsd:string'
-    },
-
-   { '@type' : 'Class',
-     '@id' : 'CapitalVariable',
-     '@subdocument' : [],
-     '@inherits' : ['TemporalVariable'],
-     '@key' : {'@type' : 'Hash', '@fields' : ['value']},
-     'value' : 'City'
-    },
-
-    { '@type' : 'Class',
-     '@id' : 'SupraPolityRelationsVariable',
-     '@subdocument' : [],
-     '@inherits' : ['EpistemicTemporalVariable'],
-     '@key' : {'@type' : 'Hash', '@fields' : ['value']},
-     'value' : 'SupraPolityRelations'
-    },
 
     { '@type' : 'Class',
       '@id' : 'PolityLineage',
@@ -294,17 +271,18 @@ def integer_from_to(value_from, value_to):
     if m:
         start = int(m[1])
         end = int(m[2])
-    elif not (value_from == ''):
+    elif re.match('\d+',value_from):
         start = int(value_from)
-        if not (value_to == ''):
+        if re.match('\d+',value_to):
             end = int(value_to)
         else:
             end = start
-    elif not (value_to == ''):
+    elif re.match('\d+',value_to):
         end = int(value_to)
         start = end
-
-    return (start, end)
+    else:
+        return None
+    return [start, end]
 
 def date_gyear(date_string):
     bce_date = '^(\d+)\s*BCE$'
@@ -350,6 +328,24 @@ def epistemic(value):
     else:
         return 'known' # Is this correct?
 
+def epistemic_family(variable,section,value_range):
+    variable_class = class_name(variable)
+    section_class = class_name(section)
+    return { '@type' : 'Class',
+             '@id' : variable_class,
+             '@subdocument' : [],
+             '@key' : { '@type' : 'ValueHash' },
+             '@inherits' : [section_class],
+             '@oneOf' : {
+                 'known' : { '@type' : 'Set',
+                             '@class' : value_range },
+                 'unknown' : [],
+                 'suspected unknown' : [],
+                 'inferred' : { '@type' : 'Set',
+                                '@class' : value_range }
+             }
+            }
+
 def centralization(value):
     if value == '':
         return None
@@ -368,6 +364,37 @@ def supra_polity_relations(value):
         return None
     return value
 
+def prop_name(name):
+    return urllib.parse.quote(name.lower().replace(' ', '_'))
+
+def class_name(name):
+    return urllib.parse.quote(name.title().replace(' ', ''))
+
+def epistemic_instance(var_obj,value_type,epistemic_state,value,date_range):
+    value_obj = {'@type' : value_type, 'value' : value}
+    if date_range:
+        start,end = date_range
+        value_obj['date_range'] = { '@type' : 'DateRange',
+                                    'from' : start,
+                                    'to' : end}
+
+    if epistemic_state == 'known':
+        if 'known' in var_obj:
+            var_obj['known'].append(value_obj)
+        else:
+            var_obj['known'] = [value_obj]
+            return var_obj
+    elif epistemic_state == 'unknown':
+        return var_obj
+    elif epistemic_state == 'suspected unknown':
+        return var_obj
+    elif epistemic_state == 'inferred':
+        if 'inferred' in var_obj:
+            var_obj['inferred'].append(value_obj)
+        else:
+            var_obj['inferred'] = [value_obj]
+        return var_obj
+
 class Schema:
     def __init__(self):
         self.sections = {}
@@ -376,21 +403,27 @@ class Schema:
         self.prop = {}
 
     def register(self,section,subsection):
+        section_class = class_name(section)
+        section_prop = prop_name(section)
+        subsection_class = class_name(subsection)
+        subsection_prop = prop_name(subsection)
+
         if not (section in self.sections):
             self.sections[section] = {'@type' : 'Class',
-                                      '@id' : section,
-                                      '@abstract' : []}
-
-        if not (subsection == '' or subsection in subsection):
+                                      '@id' : section_class }
+        if not (subsection == '') and not (subsection in self.subsections):
             self.subsections[subsection] = { '@type' : 'Class',
-                                             '@id' : subsection,
-                                             '@abstract' : [],
-                                             '@inherits' : [section] }
+                                             '@id' : subsection_class }
+            self.sections[section][subsection_prop] = { '@type' : 'Optional',
+                                                        '@class' : subsection_class }
+            return subsection
+        if not (subsection == ''):
             return subsection
         elif section in self.sections:
             return section
         else:
-            raise Error("Unable to find section or subsection")
+            raise Exception("Unable to find section or subsection")
+
 
     def infer_type(self,variable,value_from,value_to,value_note,section):
         integer_pat = '^\s*\d+\s*$'
@@ -398,42 +431,18 @@ class Schema:
         centralization_pat = 'none|nominal|unitary state|confederated state|quasi-polity'
 
         if variable in self.variables:
+            # We may need to upgrade here...
             return self.variables[variable]
         elif variable == 'Capital':
-            return { '@type' : 'Class',
-                     '@id' : variable,
-                     '@subdocument' : [],
-                     '@key' : { '@type' : 'Hash',
-                                '@fields' : ['value'] },
-                     '@inherits' : ['CapitalVariable',section]}
+            return epistemic_family(variable,section,'CapitalValue')
         elif re.match(integer_pat, value_from):
-            return { '@type' : 'Class',
-                     '@id' : variable,
-                     '@subdocument' : [],
-                     '@key' : { '@type' : 'Hash',
-                                '@fields' : ['value'] },
-                     '@inherits' : ['IntegerRangeVariable',section]}
+            return epistemic_family(variable,section,'IntegerValue')
         elif re.match(presence_pat, value_from):
-            return { '@type' : 'Class',
-                     '@id' : variable,
-                     '@subdocument' : [],
-                     '@key' : { '@type' : 'Hash',
-                                '@fields' : ['value'] },
-                     '@inherits' : ['PresenceVariable',section]}
+            return epistemic_family(variable,section,'PresenceValue')
         elif re.match(centralization_pat,value_from):
-            return { '@type' : 'Class',
-                     '@id' : variable,
-                     '@subdocument' : [],
-                     '@key' : { '@type' : 'Hash',
-                                '@fields' : ['value'] },
-                     '@inherits' : ['CentralizationVariable',section]}
+            return epistemic_family(variable,section,'CentralizationValue')
         else:
-            return { '@type' : 'Class',
-                     '@id' : variable,
-                     '@subdocument' : [],
-                     '@key' : { '@type' : 'Hash',
-                                '@fields' : ['value'] },
-                     '@inherits' : ['StringVariable',section]}
+            return epistemic_family(variable,section,'StringValue')
 
     def infer_family(self,typeid,value_note,date_note):
         if value_note == 'complex':
@@ -454,6 +463,17 @@ class Schema:
                           error_note,
                           section_class):
         ty = self.infer_type(variable,value_from,value_to,value_note,section_class)
+        variable_class = class_name(variable)
+        variable_prop = prop_name(variable)
+        if section_class in self.sections:
+            section_class_def = self.sections[section_class]
+            #print(f"section class: {section_class_def}")
+            self.sections[section_class][variable_prop] = variable_class
+        elif section_class in self.subsections:
+            self.subsections[section_class][variable_prop] = variable_class
+        else:
+            raise Exception(f"Unknown section title: {section_class}")
+
         self.variables[variable] = ty
         family = self.infer_family(ty['@id'],value_note,date_note)
         self.prop[variable] = family
@@ -461,102 +481,112 @@ class Schema:
     def dump_polity(self):
         polity = {'@type' : 'Class',
                   '@id' : 'Polity'}
-        for var in self.prop:
-            ty = self.prop[var]
-            polity[var] = ty
+        for section in self.sections:
+            section_prop = prop_name(section)
+            section_class = class_name(section)
+            polity[section_prop] = section_class
         return polity
 
     def dump_schema(self):
         polity = self.dump_polity()
         elements = [polity]
+        keys = []
         for var in self.variables:
             elements.append(self.variables[var])
+        for key in self.sections:
+            elements.append(self.sections[key])
+        for key in self.subsections:
+            elements.append(self.subsections[key])
         return elements
 
-    def infer_value(self,variable,value_from,value_to,date_from,date_to,fact_type):
-        var_obj = { '@type' : variable }
-        print(variable)
-        if 'StringVariable' in self.variables[variable]['@inherits']:
-            var_obj['value'] = value_from
-        elif 'IntegerRangeVariable' in self.variables[variable]['@inherits']:
-
+    def infer_value(self,var_obj,variable,value_from,value_to,date_from,date_to,fact_type):
+        # print(self.variables[variable])
+        # print("")
+        # print(self.prop[variable])
+        value_type = self.variables[variable]['@oneOf']['known']['@class']
+        if 'StringValue' == value_type:
+            date_range = date_from_to(date_from,date_to)
             epistemic_state = epistemic(value_from)
-            if epistemic_state:
-                var_obj['epistemic_state'] = epistemic_state
+            return epistemic_instance(var_obj,value_type,epistemic_state,value_from,date_range)
+        elif 'IntegerRangeValue' == value_type:
+            date_range = date_from_to(date_from,date_to)
+            epistemic_state = epistemic(value_from)
+            integer_range = integer_from_to(value_from,value_to)
+            return epistemic_instance(var_obj,value_type,epistemic_state,integer_range,date_range)
+        elif 'IntegerValue' == value_type:
+            date_range = date_from_to(date_from,date_to)
+            epistemic_state = epistemic(value_from)
+            integer_range = integer_from_to(value_from,value_to)
+            if integer_range:
+                (start,end) = integer_range
             else:
-                integer_range = integer_from_to(value_from,value_to)
-                if integer_range:
-                    (lower, higher) = integer_range
-                    var_obj['value'] = { '@type' : 'IntegerRange',
-                                         'from' : lower,
-                                         'to' : higher }
-
-            date_range = date_from_to(date_from,date_to)
-            if date_range:
-                (start, end) = date_range
-                var_obj['date_range'] = { '@type' : 'DateRange',
-                                          'from' : start,
-                                          'to' : end }
-        elif 'DateRangeVariable' in self.variables[variable]['@inherits']:
+                start = None
+            return epistemic_instance(var_obj,value_type,epistemic_state,start,date_range)
+        elif 'DateRangeValue' == value_type:
             date_range = date_from_to(value_from,value_to)
-            if date_range:
-                (start, end) = date_range
-                var_obj['value'] = { '@type' : 'DateRange',
-                                     'from' : start,
-                                     'to' : end }
-        elif 'CapitalVariable' in self.variables[variable]['@inherits']:
+            return epistemic_instance(var_obj,value_type,epistemic,date_range,None)
+        elif 'CapitalValue' == value_type:
             date_range = date_from_to(date_from,date_to)
-            if date_range:
-                (start, end) = date_range
-                var_obj['date_range'] = { '@type' : 'DateRange',
-                                          'from' : start,
-                                          'to' : end }
+            epistemic_state = epistemic(value_from)
             if value_from != '':
-                var_obj['value'] = { '@type' : 'City',
-                                     'name' : value_from }
-        elif 'PresenceVariable' in self.variables[variable]['@inherits']:
+                 city = { '@type' : 'City',
+                          'name' : value_from }
+                 return epistemic_instance(var_obj,value_type,epistemic_state,city,date_range)
+            else:
+                return None
+        elif 'PresenceValue' == value_type:
             date_range = date_from_to(date_from,date_to)
-            if date_range:
-                (start, end) = date_range
-                var_obj['date_range'] = { '@type' : 'DateRange',
-                                          'from' : start,
-                                          'to' : end }
             epistemic_state = epistemic(value_from)
-            if epistemic_state:
-                var_obj['epistemic_state'] = epistemic_state
             presence_state = presence(value_from)
-            if presence_state:
-                var_obj['value'] = presence_state
-        elif 'CentralizationVariable' in self.variables[variable]['@inherits']:
+            return epistemic_instance(var_obj,value_type,epistemic,presence_state,date_range)
+        elif 'CentralizationValue' == value_type:
             date_range = date_from_to(date_from,date_to)
-            if date_range:
-                (start, end) = date_range
-                var_obj['date_range'] = { '@type' : 'DateRange',
-                                          'from' : start,
-                                          'to' : end }
-            centralization_state = centralization(value_from)
-            if centralization_state:
-                var_obj['value'] = centralization_state
-        elif 'SupraPolityRelationsVariable' in self.variables[variable]['@inherits']:
-            date_range = date_from_to(date_from,date_to)
-            if date_range:
-                (start, end) = date_range
-                var_obj['date_range'] = { '@type' : 'DateRange',
-                                          'from' : start,
-                                          'to' : end }
-
             epistemic_state = epistemic(value_from)
-            if epistemic_state:
-                var_obj['epistemic_state'] = epistemic_state
-
+            centralization_state = centralization(value_from)
+            return epistemic_instance(var_obj,value_type,epistemic_state,centralization_state,date_range)
+        elif 'SupraPolityRelationsValue' == value_type:
+            date_range = date_from_to(date_from,date_to)
+            epistemic_state = epistemic(value_from)
             supra_state = supra_polity_relations(value_from)
-            if supra_state:
-                var_obj['value'] = supra_state
-
+            return epistemic_instance(var_obj,value_type,epistemic_state,supra_state,date_range)
         else:
-            raise Exception('Unknown Variable Type')
+            raise Exception(f"Unknown Value Type {value_type} for {variable}")
 
         return var_obj
+
+def extend_polity(polity, section, subsection, variable, value):
+    variable_class = class_name(variable)
+    variable_prop = prop_name(variable)
+    section_class = class_name(section)
+    section_prop = prop_name(section)
+    subsection_class = class_name(subsection)
+    subsection_prop = prop_name(subsection)
+
+    if not (section_prop in polity):
+        polity[section_prop] = { '@type' : section_class }
+
+    if subsection != '':
+        if subsection_prop not in polity[section_prop]:
+            subsection_obj = {'@type' : subsection_class}
+        else:
+            subsection_obj = polity[section_prop][subsection_prop]
+
+        if variable_prop not in subsection_obj:
+            variable_obj = { '@type' : value_class }
+            subsection_obj[variable_prop] = variable_obj
+        else:
+            variable_obj = subsection_obj[variable_prop]
+
+        polity[section_prop][subsection_prop][variable_prop] = value
+    else:
+        section_obj = polity[section_prop]
+        if variable_prop not in section_obj:
+            variable_obj = { '@type' : value_class }
+            section_obj[variable_prop] = variable_obj
+        else:
+            variable_obj = subsection_obj[variable_prop]
+
+        polity[section_prop] = variable_obj
 
 def infer_schema(csvpath):
     schema = Schema()
@@ -566,7 +596,10 @@ def infer_schema(csvpath):
         for row in rows:
             (nga,polity,section,subsection,variable,value_from,value_to,
              date_from,date_to,fact_type,value_node,date_note,error_note) = row
-            #variable = urllib.parse.quote(variable.lower().replace(' ', '_'))
+            section = section.title()
+            subsection = subsection.title()
+            variable_class = class_name(variable)
+            variable_prop = prop_name(variable)
             if polity == 'Code book':
                 pass # special case?
             else:
@@ -594,35 +627,48 @@ def load_data(csvpath,schema):
         rows = csv.reader(csvfile, delimiter='|')
         polities = []
         this_polity = { '@id' : None }
+        var_obj = { '@type' : None }
         for row in rows:
             (nga,polity,section,subsection,variable,value_from,value_to,
              date_from,date_to,fact_type,value_note,date_note,error_note) = row
+            if polity == 'Code book':
+                continue # string out of band value
+            section = section.title()
+            subsection = subsection.title()
+            variable_class = class_name(variable)
+            variable_prop = prop_name(variable)
+            section_class = class_name(section)
+            section_prop = prop_name(section)
+            subsection_class = class_name(subsection)
+            subsection_prop = prop_name(subsection)
+
             if not ('Polity/' + polity == this_polity['@id']):
-                this_polity = {'@type' : 'Polity', '@id' : 'Polity/' + polity }
+                print(this_polity)
+                this_polity = {'@id' : 'Polity/' + polity }
                 polities.append(this_polity)
 
-            value = schema.infer_value(variable,
+            if not (var_obj['@type'] == variable_class):
+                var_obj = { '@type' : variable_class }
+
+            extend_polity(this_polity, section, subsection, variable, var_obj)
+            value = schema.infer_value(var_obj,
+                                       variable,
                                        value_from,
                                        value_to,
                                        date_from,
                                        date_to,
                                        value_note)
-            if this_polity[variable]:
-                if isinstance(this_polity[variable],list):
-                    this_polity[variable].append(value)
-                else:
-                    this_polity[variable] = [this_polity[variable],value]
-            else:
-                this_polity[variable] = value
+
         return polities
 
 def import_data(client,objects):
-    chunk_size = 50
+    chunk_size = 1
     size = len(objects)
     chunks = (len(objects) + 1) // chunk_size
     for m in range(0,chunks):
         start_time = time.time()
         object_slice = objects[m * chunk_size: min((m+1) * chunk_size, size)]
+        print(object_slice)
         results = client.insert_document(object_slice)
         print(f"Added schema objects: {results}")
         elapsed_time = (time.time() - start_time)
@@ -665,10 +711,10 @@ def run():
 
     schema = infer_schema(csvpath)
     schema_objects = basic_schema + schema.dump_schema()
-    print(json.dumps(schema_objects, indent=4))
+    # print(json.dumps(schema_objects, indent=4))
     import_schema(client,schema_objects)
     objects = load_data(csvpath,schema)
-    print(json.dumps(objects, indent=4))
+    # print(json.dumps(objects, indent=4))
     import_data(client,objects)
 
 if __name__ == "__main__":
