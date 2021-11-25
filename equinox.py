@@ -142,64 +142,63 @@ basic_schema = [
     { '@type' : 'Class',
       '@id' : 'IntegerValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      '@inherits' : ['TemporalScope'],
+      '@key' : {'@type' : 'Random'},
       'value' : 'xsd:integer'
      },
 
     { '@type' : 'Class',
       '@id' : 'PresenceValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
-      'value' : 'xsd:integer'
+      '@inherits' : ['TemporalScope'],
+      '@key' : {'@type' : 'Random'},
+      'value' : 'Presence'
      },
 
     { '@type' : 'Class',
       '@id' : 'StringValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      '@inherits' : ['TemporalScope'],
+      '@key' : {'@type' : 'Random'},
       'value' : 'xsd:string'
      },
 
     { '@type' : 'Class',
       '@id' : 'DateRangeValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      '@key' : {'@type' : 'Random'},
       'value' : 'DateRange'
      },
 
     { '@type' : 'Class',
       '@id' : 'IntegerRangeValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      '@inherits' : ['TemporalScope'],
+      '@key' : {'@type' : 'Random'},
       'value' : 'IntegerRange'
      },
 
     { '@type' : 'Class',
       '@id' : 'CentralizationValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      '@inherits' : ['TemporalScope'],
+      '@key' : {'@type' : 'Random'},
       'value' : 'Centralization'
      },
 
     { '@type' : 'Class',
       '@id' : 'CapitalValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      '@inherits' : ['TemporalScope'],
+      '@key' : {'@type' : 'Random'},
       'value' : 'City'
      },
 
     { '@type' : 'Class',
       '@id' : 'SupraPolityRelationsValue',
       '@subdocument' : [],
-      '@abstract' : [],
-      '@key' : {'@type' : 'Lexical', '@fields' : ['value']},
+      '@inherits' : ['TemporalScope'],
+      '@key' : {'@type' : 'Random'},
       'value' : 'SupraPolityRelations'
      },
 
@@ -313,6 +312,7 @@ def date_from_to(value_from, value_to):
     return (start,end)
 
 def epistemic(value):
+    print(value)
     if re.match('suspected unknown', value):
         return 'suspected unknown'
     elif re.match('unknown',value):
@@ -334,15 +334,12 @@ def epistemic_family(variable,section,value_range):
     return { '@type' : 'Class',
              '@id' : variable_class,
              '@subdocument' : [],
-             '@key' : { '@type' : 'ValueHash' },
-             '@inherits' : [section_class],
+             '@key' : { '@type' : 'Random' },
              '@oneOf' : {
-                 'known' : { '@type' : 'Set',
-                             '@class' : value_range },
-                 'unknown' : [],
-                 'suspected unknown' : [],
-                 'inferred' : { '@type' : 'Set',
-                                '@class' : value_range }
+                 'known' : value_range,
+                 'unknown' : 'sys:Unit',
+                 'suspected_unknown' : 'sys:Unit',
+                 'inferred' : value_range
              }
             }
 
@@ -352,17 +349,26 @@ def centralization(value):
     return value
 
 def presence(value):
-    if re.match('present', value):
+    if re.match('.*present', value):
         return 'present'
-    elif re.match('absent',value):
+    elif re.match('.*absent',value):
         return 'absent'
     else:
         return None
 
 def supra_polity_relations(value):
-    if value == '':
+    if re.match('.*vassalage', value):
+        return 'vassalage'
+    elif re.match('.*none',value):
+        return 'none'
+    elif re.match('.*alliance',value):
+        return 'alliance'
+    elif re.match('.*nominal', value):
+        return 'nominal'
+    elif value == '':
         return None
-    return value
+    else:
+        return value
 
 def prop_name(name):
     return urllib.parse.quote(name.lower().replace(' ', '_'))
@@ -377,23 +383,23 @@ def epistemic_instance(var_obj,value_type,epistemic_state,value,date_range):
         value_obj['date_range'] = { '@type' : 'DateRange',
                                     'from' : start,
                                     'to' : end}
-
+    if value is None:
+        var_obj['unknown'] = []
+        return var_obj
     if epistemic_state == 'known':
-        if 'known' in var_obj:
-            var_obj['known'].append(value_obj)
-        else:
-            var_obj['known'] = [value_obj]
-            return var_obj
+        var_obj['known'] = value_obj
+        return var_obj
     elif epistemic_state == 'unknown':
+        var_obj['unknown'] = []
         return var_obj
     elif epistemic_state == 'suspected unknown':
+        var_obj['suspected_unknown'] = []
         return var_obj
     elif epistemic_state == 'inferred':
-        if 'inferred' in var_obj:
-            var_obj['inferred'].append(value_obj)
-        else:
-            var_obj['inferred'] = [value_obj]
+        var_obj['inferred'] = value_obj
         return var_obj
+    else:
+        print(f"Warning: Failure to process epistemic_state: {epistemic_state} {var_obj}")
 
 class Schema:
     def __init__(self):
@@ -427,14 +433,16 @@ class Schema:
 
     def infer_type(self,variable,value_from,value_to,value_note,section):
         integer_pat = '^\s*\d+\s*$'
-        presence_pat = 'present|absent'
-        centralization_pat = 'none|nominal|unitary state|confederated state|quasi-polity'
+        presence_pat = '.*present.*|.*absent.*'
+        centralization_pat = 'nominal|unitary state|confederated state|quasi-polity'
 
         if variable in self.variables:
             # We may need to upgrade here...
             return self.variables[variable]
         elif variable == 'Capital':
             return epistemic_family(variable,section,'CapitalValue')
+        elif variable == 'Supra-polity relations':
+            return epistemic_family(variable,section,'SupraPolityRelationsValue')
         elif re.match(integer_pat, value_from):
             return epistemic_family(variable,section,'IntegerValue')
         elif re.match(presence_pat, value_from):
@@ -466,11 +474,12 @@ class Schema:
         variable_class = class_name(variable)
         variable_prop = prop_name(variable)
         if section_class in self.sections:
-            section_class_def = self.sections[section_class]
-            #print(f"section class: {section_class_def}")
-            self.sections[section_class][variable_prop] = variable_class
+            self.sections[section_class][variable_prop] = {'@type' : 'Set',
+                                                           '@class' : variable_class }
         elif section_class in self.subsections:
-            self.subsections[section_class][variable_prop] = variable_class
+            section_class_def = self.subsections[section_class]
+            self.subsections[section_class][variable_prop] = {'@type' : 'Set',
+                                                              '@class' : variable_class}
         else:
             raise Exception(f"Unknown section title: {section_class}")
 
@@ -484,7 +493,7 @@ class Schema:
         for section in self.sections:
             section_prop = prop_name(section)
             section_class = class_name(section)
-            polity[section_prop] = section_class
+            polity[section_prop] = { '@type' : 'Optional', '@class' : section_class}
         return polity
 
     def dump_schema(self):
@@ -500,10 +509,7 @@ class Schema:
         return elements
 
     def infer_value(self,var_obj,variable,value_from,value_to,date_from,date_to,fact_type):
-        # print(self.variables[variable])
-        # print("")
-        # print(self.prop[variable])
-        value_type = self.variables[variable]['@oneOf']['known']['@class']
+        value_type = self.variables[variable]['@oneOf']['known']
         if 'StringValue' == value_type:
             date_range = date_from_to(date_from,date_to)
             epistemic_state = epistemic(value_from)
@@ -538,7 +544,7 @@ class Schema:
             date_range = date_from_to(date_from,date_to)
             epistemic_state = epistemic(value_from)
             presence_state = presence(value_from)
-            return epistemic_instance(var_obj,value_type,epistemic,presence_state,date_range)
+            return epistemic_instance(var_obj,value_type,epistemic_state,presence_state,date_range)
         elif 'CentralizationValue' == value_type:
             date_range = date_from_to(date_from,date_to)
             epistemic_state = epistemic(value_from)
@@ -555,6 +561,9 @@ class Schema:
         return var_obj
 
 def extend_polity(polity, section, subsection, variable, value):
+    if value is None:
+        return
+
     variable_class = class_name(variable)
     variable_prop = prop_name(variable)
     section_class = class_name(section)
@@ -568,25 +577,24 @@ def extend_polity(polity, section, subsection, variable, value):
     if subsection != '':
         if subsection_prop not in polity[section_prop]:
             subsection_obj = {'@type' : subsection_class}
+            polity[section_prop][subsection_prop] = subsection_obj
         else:
             subsection_obj = polity[section_prop][subsection_prop]
 
-        if variable_prop not in subsection_obj:
-            variable_obj = { '@type' : value_class }
-            subsection_obj[variable_prop] = variable_obj
+        #print(f"subsection_obj: {subsection_obj}")
+        if variable_prop in subsection_obj:
+            subsection_obj[variable_prop].append(value)
         else:
-            variable_obj = subsection_obj[variable_prop]
-
-        polity[section_prop][subsection_prop][variable_prop] = value
+            subsection_obj[variable_prop] = [value]
+        #polity[section_prop][subsection_prop][variable_prop] = variable_obj
     else:
         section_obj = polity[section_prop]
-        if variable_prop not in section_obj:
-            variable_obj = { '@type' : value_class }
-            section_obj[variable_prop] = variable_obj
-        else:
-            variable_obj = subsection_obj[variable_prop]
 
-        polity[section_prop] = variable_obj
+        if variable_prop in section_obj:
+            section_obj[variable_prop].append(value)
+        else:
+            section_obj[variable_prop] = [value]
+        #polity[section_prop][variable_prop] = value
 
 def infer_schema(csvpath):
     schema = Schema()
@@ -643,14 +651,11 @@ def load_data(csvpath,schema):
             subsection_prop = prop_name(subsection)
 
             if not ('Polity/' + polity == this_polity['@id']):
-                print(this_polity)
-                this_polity = {'@id' : 'Polity/' + polity }
+                this_polity = { '@id' : 'Polity/' + polity,
+                                '@type' : 'Polity' }
                 polities.append(this_polity)
 
-            if not (var_obj['@type'] == variable_class):
-                var_obj = { '@type' : variable_class }
-
-            extend_polity(this_polity, section, subsection, variable, var_obj)
+            var_obj = { '@type' : variable_class }
             value = schema.infer_value(var_obj,
                                        variable,
                                        value_from,
@@ -658,6 +663,7 @@ def load_data(csvpath,schema):
                                        date_from,
                                        date_to,
                                        value_note)
+            extend_polity(this_polity, section, subsection, variable, var_obj)
 
         return polities
 
@@ -668,12 +674,13 @@ def import_data(client,objects):
     for m in range(0,chunks):
         start_time = time.time()
         object_slice = objects[m * chunk_size: min((m+1) * chunk_size, size)]
-        print(object_slice)
+        print(json.dumps(object_slice, indent=4))
         results = client.insert_document(object_slice)
-        print(f"Added schema objects: {results}")
+        #results = client.insert_document(document)
+        print(f"Added documents: {results}")
         elapsed_time = (time.time() - start_time)
         time_per_polity = (elapsed_time/chunk_size)
-        print(f"{insert_type} creation and insert execution time for {n_polities} polities: {elapsed_time}s ({time_per_polity}s/test polity)")
+        print(f"Creation and insert execution time for {chunk_size} polities: {elapsed_time}s ({time_per_polity}s/test polity)")
 
 def run():
     csvpath = "equinox.csv"
@@ -711,7 +718,7 @@ def run():
 
     schema = infer_schema(csvpath)
     schema_objects = basic_schema + schema.dump_schema()
-    # print(json.dumps(schema_objects, indent=4))
+    print(json.dumps(schema_objects, indent=4))
     import_schema(client,schema_objects)
     objects = load_data(csvpath,schema)
     # print(json.dumps(objects, indent=4))
