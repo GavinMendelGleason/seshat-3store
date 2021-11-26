@@ -207,6 +207,102 @@ basic_schema = [
      },
 
     { '@type' : 'Class',
+      '@id' : 'IntegerEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'IntegerValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'IntegerValue'
+      }
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'PresenceEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'PresenceValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'PresenceValue'
+      }
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'StringEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'StringValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'StringValue'
+      }
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'DateRangeEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'DateRangeValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'DateRangeValue'
+      }
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'IntegerRangeEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'IntegerRangeValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'IntegerRangeValue'
+      }
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'CentralizationEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'CentralizationValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'CentralizationValue'
+      }
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'CapitalEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'CapitalValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'CapitalValue'
+      }
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'SupraPolityRelationsEpistemic',
+      '@subdocument' : [],
+      '@key' : {'@type' : 'Random'},
+      '@oneOf' : {
+          'known' : 'SupraPolityRelationsValue',
+          'unknown' : 'sys:Unit',
+          'suspected_unknown' : 'sys:Unit',
+          'inferred' : 'SupraPolityRelationsValue'
+      }
+     },
+
+    { '@type' : 'Class',
       '@id' : 'Variable',
       '@subdocument' : [],
       '@abstract' : [],
@@ -332,6 +428,18 @@ def epistemic(value):
     else:
         return 'known' # Is this correct?
 
+Value_Epistemic_Map = {
+    'IntegerValue' : 'IntegerEpistemic',
+    'PresenceValue' : 'PresenceEpistemic',
+    'StringValue' : 'StringEpistemic',
+    'DateRangeValue' : 'DateRangeEpistemic',
+    'IntegerRangeValue' : 'IntegerRangeEpistemic',
+    'SupraPolityRelationsValue' : 'SupraPolityRelationsEpistemic',
+    'CapitalValue' : 'CapitalEpistemic',
+    'CentralizationValue' : 'CentralizationEpistemic',
+}
+Epistemic_Value_Map = {v: k for k, v in Value_Epistemic_Map.items()}
+
 def epistemic_family(variable,section,value_range):
     variable_class = class_name(variable)
     section_class = class_name(section)
@@ -339,13 +447,7 @@ def epistemic_family(variable,section,value_range):
              '@id' : variable_class,
              '@subdocument' : [],
              '@key' : { '@type' : 'Random' },
-             '@oneOf' : {
-                 'known' : value_range,
-                 'unknown' : 'sys:Unit',
-                 'suspected_unknown' : 'sys:Unit',
-                 'inferred' : value_range
-             }
-            }
+             '@inherits' : Value_Epistemic_Map[value_range] }
 
 def centralization(value):
     value = value.lower()
@@ -526,7 +628,7 @@ class Schema:
         return elements
 
     def infer_value(self,var_obj,variable,value_from,value_to,date_from,date_to,fact_type):
-        value_type = self.variables[variable]['@oneOf']['known']
+        value_type = Epistemic_Value_Map[self.variables[variable]['@inherits']]
         if 'StringValue' == value_type:
             date_range = date_from_to(date_from,date_to)
             epistemic_state = epistemic(value_from)
