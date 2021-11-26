@@ -60,8 +60,8 @@ basic_schema = [
       '@subdocument' : [],
       "@key" : { "@type" : "Hash",
                  "@fields" : ["from", "to"] },
-      'from' : 'xsd:gYear',
-      'to' : 'xsd:gYear'
+      'from' : 'xsd:integer',
+      'to' : 'xsd:integer'
      },
 
     { '@type' : 'Class',
@@ -87,7 +87,8 @@ basic_schema = [
           'none',
           'alliance',
           'vassalage',
-          'nominal'
+          'nominal',
+          'personal union'
       ]
      },
 
@@ -95,9 +96,12 @@ basic_schema = [
       '@id' : 'Centralization',
       '@value' : [
           'none',
+          'loose',
           'nominal',
           'unitary state',
           'confederated state',
+          'nominal allegiance',
+          'polity',
           'quasi-polity',
       ]
      },
@@ -219,24 +223,25 @@ basic_schema = [
 ]
 
 def date_range_object(date_string):
+    date_string = date_string.upper()
     bce_date = '^(\d+)\s*BCE$'
-    ce_date = '^(\d+)\s*CE$'
+    ce_date = '^(\d+)\s*C?E?$'
 
     bce_date_range = '^(\d+)\s*-\s*(\d+)\s*BCE$|^(\d+)\s*BCE\s*-\s*(\d+)\s*BCE$'
-    ce_date_range = '^(\d+)\s*-\s*(\d+)\s*CE$|^(\d+)\s*CE-\s*(\d+)\s*CE$'
-    bce_ce_date_range = '^(\d+)\s*BCE-\s*(\d+)\s*CE$'
+    ce_date_range = '^(\d+)\s*-\s*(\d+)\s*C?E?$|^(\d+)\s*CE\s*-\s*(\d+)\s*CE$$'
+    bce_ce_date_range = '^(\d+)\s*BCE\s*-\s*(\d+)\s*CE$'
 
     m = re.match(bce_date,date_string)
     if m:
         from_time = - int(m[1])
         to_time = from_time
-        return { 'from' : from_time, 'to' : to_time }
+        return { '@type' : 'DateRange', 'from' : from_time, 'to' : to_time }
 
     m = re.match(ce_date,date_string)
     if m:
         from_time = int(m[1])
         to_time = from_time
-        return { 'from' : from_time, 'to' : to_time }
+        return { '@type' : 'DateRange', 'from' : from_time, 'to' : to_time }
 
     m = re.match(bce_date_range,date_string)
     if m:
@@ -244,7 +249,7 @@ def date_range_object(date_string):
         end = m[2] if m[2] else m[4]
         from_time = -int(start)
         to_time = -int(end)
-        return { 'from' : from_time, 'to' : to_time }
+        return { '@type' : 'DateRange', 'from' : from_time, 'to' : to_time }
 
     m = re.match(ce_date_range,date_string)
     if m:
@@ -252,7 +257,7 @@ def date_range_object(date_string):
         end = m[2] if m[2] else m[4]
         from_time = int(start)
         to_time = int(end)
-        return { 'from' : from_time, 'to' : to_time }
+        return { '@type' : 'DateRange', 'from' : from_time, 'to' : to_time }
 
     m = re.match(bce_ce_date_range,date_string)
     if m:
@@ -260,7 +265,7 @@ def date_range_object(date_string):
         end = m[2] if m[2] else m[4]
         from_time = int(start)
         to_time = int(end)
-        return { 'from' : from_time, 'to' : to_time }
+        return { '@type' : 'DateRange', 'from' : from_time, 'to' : to_time }
 
     raise Exception('Unable to parse date')
 
@@ -312,10 +317,9 @@ def date_from_to(value_from, value_to):
     return (start,end)
 
 def epistemic(value):
-    print(value)
     if re.match('suspected unknown', value):
         return 'suspected unknown'
-    elif re.match('unknown',value):
+    elif re.match('unknown',value) or re.match('uncoded',value):
         return 'unknown'
     elif re.match('known',value):
         return 'known'
@@ -344,11 +348,13 @@ def epistemic_family(variable,section,value_range):
             }
 
 def centralization(value):
+    value = value.lower()
     if value == '':
         return None
     return value
 
 def presence(value):
+    value = value.lower()
     if re.match('.*present', value):
         return 'present'
     elif re.match('.*absent',value):
@@ -357,6 +363,7 @@ def presence(value):
         return None
 
 def supra_polity_relations(value):
+    value = value.lower()
     if re.match('.*vassalage', value):
         return 'vassalage'
     elif re.match('.*none',value):
@@ -416,9 +423,13 @@ class Schema:
 
         if not (section in self.sections):
             self.sections[section] = {'@type' : 'Class',
+                                      "@subdocument" : [],
+                                      "@key" : { "@type" : "Random"},
                                       '@id' : section_class }
         if not (subsection == '') and not (subsection in self.subsections):
             self.subsections[subsection] = { '@type' : 'Class',
+                                             "@subdocument" : [],
+                                             "@key" : { "@type" : "Random"},
                                              '@id' : subsection_class }
             self.sections[section][subsection_prop] = { '@type' : 'Optional',
                                                         '@class' : subsection_class }
@@ -433,12 +444,15 @@ class Schema:
 
     def infer_type(self,variable,value_from,value_to,value_note,section):
         integer_pat = '^\s*\d+\s*$'
-        presence_pat = '.*present.*|.*absent.*'
-        centralization_pat = 'nominal|unitary state|confederated state|quasi-polity'
+        presence_pat = '^.*present.*$|^.*absent.*$'
+        centralization_pat = '^.*none.*$|^.*loose.*$|^.*nominal.*$|^.*unitary state.*$|^.*confederated state.*$|^.*quasi-polity.*$|^.*polity.*$'
+        date_range_pat = '^\d+\s*B?C?E?\s*$|^\d+\s*B?C?E?\s*-\s*\d+\s*B?C?E?\s*$'
 
         if variable in self.variables:
             # We may need to upgrade here...
             return self.variables[variable]
+        # elif variable == 'Duration':
+        #     return epistemic_family(variable,section,'DateRangeValue')
         elif variable == 'Capital':
             return epistemic_family(variable,section,'CapitalValue')
         elif variable == 'Supra-polity relations':
@@ -447,8 +461,11 @@ class Schema:
             return epistemic_family(variable,section,'IntegerValue')
         elif re.match(presence_pat, value_from):
             return epistemic_family(variable,section,'PresenceValue')
-        elif re.match(centralization_pat,value_from):
+        elif (variable == 'Degree of centralization'
+              or re.match(centralization_pat,value_from)):
             return epistemic_family(variable,section,'CentralizationValue')
+        elif re.match(date_range_pat,value_from):
+            return epistemic_family(variable,section,'DateRangeValue')
         else:
             return epistemic_family(variable,section,'StringValue')
 
@@ -529,8 +546,12 @@ class Schema:
                 start = None
             return epistemic_instance(var_obj,value_type,epistemic_state,start,date_range)
         elif 'DateRangeValue' == value_type:
-            date_range = date_from_to(value_from,value_to)
-            return epistemic_instance(var_obj,value_type,epistemic,date_range,None)
+            epistemic_state = epistemic(value_from)
+            if epistemic_state == 'unknown':
+                date_range = None
+            else:
+                date_range = date_range_object(value_from)
+            return epistemic_instance(var_obj,value_type,epistemic_state,date_range,None)
         elif 'CapitalValue' == value_type:
             date_range = date_from_to(date_from,date_to)
             epistemic_state = epistemic(value_from)
@@ -668,13 +689,13 @@ def load_data(csvpath,schema):
         return polities
 
 def import_data(client,objects):
-    chunk_size = 1
+    chunk_size = 10
     size = len(objects)
     chunks = (len(objects) + 1) // chunk_size
     for m in range(0,chunks):
         start_time = time.time()
         object_slice = objects[m * chunk_size: min((m+1) * chunk_size, size)]
-        print(json.dumps(object_slice, indent=4))
+        #print(json.dumps(object_slice, indent=4))
         results = client.insert_document(object_slice)
         #results = client.insert_document(document)
         print(f"Added documents: {results}")
@@ -718,7 +739,7 @@ def run():
 
     schema = infer_schema(csvpath)
     schema_objects = basic_schema + schema.dump_schema()
-    print(json.dumps(schema_objects, indent=4))
+    #print(json.dumps(schema_objects, indent=4))
     import_schema(client,schema_objects)
     objects = load_data(csvpath,schema)
     # print(json.dumps(objects, indent=4))
