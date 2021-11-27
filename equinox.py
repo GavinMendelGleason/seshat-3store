@@ -824,8 +824,6 @@ def connect_polities(client,csvpath):
              date_from,date_to,fact_type,value_note,date_note,error_note) = row
 
             if variable in Polity_List:
-                print(variable)
-                print(value_from)
                 poluri,name = WOQL().vars("Polity_URI","Name")
                 query = WOQL().limit(1,
                                      ( (WOQL().path(poluri,
@@ -840,7 +838,6 @@ def connect_polities(client,csvpath):
                     other_polity_uri = results['bindings'][0]['Polity_URI']
                     polity_uri = f"Polity/{polity}"
                     other_polity = other_polity_uri.split('/')[-1]
-                    print(other_polity)
                     if variable == 'preceding (quasi)polity':
                         document = { '@id' : f"PrecedingPolity/{polity}_{other_polity}",
                                      '@type' : 'PrecedingPolity',
@@ -851,7 +848,7 @@ def connect_polities(client,csvpath):
                     elif variable == 'succeeding (quasi)polity':
                         document = { '@id' : f"SuccedingPolity/{polity}_{other_polity}",
                                      '@type' : 'SuccedingPolity',
-                                     'preceding' : other_polity_uri,
+                                     'succeding' : other_polity_uri,
                                      'polity' : polity_uri }
                         results = client.update_document(document)
                         print(f"adding preceding: {polity}")
