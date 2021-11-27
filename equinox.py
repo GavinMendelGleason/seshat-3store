@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from terminusdb_client import WOQLClient
+from terminusdb_client import WOQLQuery as WOQL
 import re
 import csv
 import json
@@ -310,11 +311,15 @@ basic_schema = [
      },
 
     { '@type' : 'Class',
-      '@id' : 'PolityLineage',
-      'preceding (quasi)polity' : 'Polity',
-      'succeeding (quasi)polity' : 'Polity',
-      'relationship' : { '@type' : 'Set',
-                         '@class' : 'LineageType' }
+      '@id' : 'PrecedingPolity',
+      'preceding' : 'Polity',
+      'polity' : 'Polity'
+     },
+
+    { '@type' : 'Class',
+      '@id' : 'SuccedingPolity',
+      'succeding' : 'Polity',
+      'polity' : 'Polity'
      }
 ]
 
@@ -510,6 +515,10 @@ def epistemic_instance(var_obj,value_type,epistemic_state,value,date_range):
     else:
         print(f"Warning: Failure to process epistemic_state: {epistemic_state} {var_obj}")
 
+Polity_List = ['preceding (quasi)polity',
+                     'relationship to preceding (quasi)polity',
+                     'succeeding (quasi)polity']
+
 class Schema:
     def __init__(self):
         self.sections = {}
@@ -603,6 +612,7 @@ class Schema:
             raise Exception(f"Unknown section title: {section_class}")
 
         self.variables[variable] = ty
+
         family = self.infer_family(ty['@id'],value_note,date_note)
         self.prop[variable] = family
 
@@ -762,7 +772,7 @@ def load_data(csvpath,schema):
         for row in rows:
             (nga,polity,section,subsection,variable,value_from,value_to,
              date_from,date_to,fact_type,value_note,date_note,error_note) = row
-            if polity == 'Code book':
+            if polity == 'Code book' or variable in Polity_List:
                 continue # string out of band value
             section = section.title()
             subsection = subsection.title()
@@ -805,6 +815,47 @@ def import_data(client,objects):
         time_per_polity = (elapsed_time/chunk_size)
         print(f"Creation and insert execution time for {chunk_size} polities: {elapsed_time}s ({time_per_polity}s/test polity)")
 
+def connect_polities(client,csvpath):
+    with open(csvpath, newline='') as csvfile:
+        next(csvfile) # drop header
+        rows = csv.reader(csvfile, delimiter='|')
+        for row in rows:
+            (nga,polity,section,subsection,variable,value_from,value_to,
+             date_from,date_to,fact_type,value_note,date_note,error_note) = row
+
+            if variable in Polity_List:
+                print(variable)
+                print(value_from)
+                poluri,name = WOQL().vars("Polity_URI","Name")
+                query = WOQL().limit(1,
+                                     ( (WOQL().path(poluri,
+                                                    "general_variables,original_name,known,value",
+                                                    WOQL().string(value_from))
+                                        | WOQL().path(poluri,
+                                                      "general_variables,alternative_names,known,value",
+                                                      WOQL().string(value_from)))))
+
+                results = client.query(query)
+                if len(results['bindings']) == 1:
+                    other_polity_uri = results['bindings'][0]['Polity_URI']
+                    polity_uri = f"Polity/{polity}"
+                    other_polity = other_polity_uri.split('/')[-1]
+                    print(other_polity)
+                    if variable == 'preceding (quasi)polity':
+                        document = { '@id' : f"Preceding/{polity}_{other_polity}",
+                                     '@type' : 'PrecedingPolity',
+                                     'preceding' : other_polity_uri,
+                                     'polity' : polity_uri }
+                        results = client.update_document(document)
+                        print(f"adding preceding: {polity}")
+                    elif variable == 'succeeding (quasi)polity':
+                        document = { '@id' : f"Succeding/{polity}_{other_polity}",
+                                     '@type' : 'SuccedingPolity',
+                                     'preceding' : other_polity_uri,
+                                     'polity' : polity_uri }
+                        results = client.update_document(document)
+                        print(f"adding preceding: {polity}")
+
 def run():
     csvpath = "equinox.csv"
     key = os.environ['TERMINUSDB_ACCESS_TOKEN']
@@ -827,6 +878,9 @@ def run():
     else:
         client.connect(team=team, use_token=use_token)
 
+    # use when not recreating
+    #client.connect(db=dbid,team=team,use_token=use_token)
+
     exists = client.get_database(dbid)
     if exists:
         client.delete_database(dbid, team=team)
@@ -846,6 +900,7 @@ def run():
     objects = load_data(csvpath,schema)
     # print(json.dumps(objects, indent=4))
     import_data(client,objects)
+    connect_polities(client,csvpath)
 
 if __name__ == "__main__":
     run()
