@@ -842,14 +842,14 @@ def connect_polities(client,csvpath):
                     other_polity = other_polity_uri.split('/')[-1]
                     print(other_polity)
                     if variable == 'preceding (quasi)polity':
-                        document = { '@id' : f"Preceding/{polity}_{other_polity}",
+                        document = { '@id' : f"PrecedingPolity/{polity}_{other_polity}",
                                      '@type' : 'PrecedingPolity',
                                      'preceding' : other_polity_uri,
                                      'polity' : polity_uri }
                         results = client.update_document(document)
                         print(f"adding preceding: {polity}")
                     elif variable == 'succeeding (quasi)polity':
-                        document = { '@id' : f"Succeding/{polity}_{other_polity}",
+                        document = { '@id' : f"SuccedingPolity/{polity}_{other_polity}",
                                      '@type' : 'SuccedingPolity',
                                      'preceding' : other_polity_uri,
                                      'polity' : polity_uri }
