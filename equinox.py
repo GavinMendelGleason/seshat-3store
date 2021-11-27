@@ -310,10 +310,23 @@ basic_schema = [
       '@inherits' : [],
      },
 
+    { '@type' : 'Enum',
+      '@id' : 'PrecedingPolityRelationship',
+      '@value' : [
+          "continuity",
+          "disruption",
+          "elite migration",
+          "cultural assimilation",
+          "indigenous revolt",
+      ]
+     },
+
     { '@type' : 'Class',
       '@id' : 'PrecedingPolity',
       'preceding' : 'Polity',
-      'polity' : 'Polity'
+      'polity' : 'Polity',
+      'relationship' : { '@type' : 'Set',
+                         '@class' : 'PrecedingPolityRelationship' },
      },
 
 ]
@@ -511,8 +524,7 @@ def epistemic_instance(var_obj,value_type,epistemic_state,value,date_range):
         print(f"Warning: Failure to process epistemic_state: {epistemic_state} {var_obj}")
 
 Polity_List = ['preceding (quasi)polity',
-                     'relationship to preceding (quasi)polity',
-                     'succeeding (quasi)polity']
+               'succeeding (quasi)polity']
 
 class Schema:
     def __init__(self):
@@ -834,19 +846,47 @@ def connect_polities(client,csvpath):
                     polity_uri = f"Polity/{polity}"
                     other_polity = other_polity_uri.split('/')[-1]
                     if variable == 'preceding (quasi)polity':
-                        document = { '@id' : f"PrecedingPolity/{polity}_{other_polity}",
-                                     '@type' : 'PrecedingPolity',
-                                     'preceding' : other_polity_uri,
-                                     'polity' : polity_uri }
-                        results = client.update_document(document)
-                        print(f"adding preceding: {polity}")
+                        before_uri = other_polity_uri
+                        before = other_polity
+                        after_uri = polity_uri
+                        after = polity
                     elif variable == 'succeeding (quasi)polity':
-                        document = { '@id' : f"PrecedingPolity/{other_polity}_{polity}",
-                                     '@type' : 'PrecedingPolity',
-                                     'preceding' : polity_uri,
-                                     'polity' : other_polity_uri }
-                        results = client.update_document(document)
-                        print(f"adding succeding: {polity}")
+                        before_uri = polity_uri
+                        before = polity
+                        after_uri = other_polity_uri
+                        after = other_polity
+
+                    relationships = get_previous_relationships(client,after_uri)
+                    print(f"relationships: {relationships}")
+                    document = { '@id' : f"PrecedingPolity/{before}_{after}",
+                                 '@type' : 'PrecedingPolity',
+                                 'preceding' : before_uri,
+                                 'polity' : after_uri,
+                                 'relationship' : relationships
+                                }
+                    results = client.update_document(document)
+                    print(f"adding preceding: {before} => {after}")
+
+def get_previous_relationships(client,after_uri):
+    relationship,i1,i2,i3 = WOQL().vars('relationship', 'i1', 'i2', 'i3')
+    query = (WOQL().triple(after_uri,'general_variables', i1)
+             & WOQL().triple(i1,'relationship_to_preceding_%28quasi%29polity',i2)
+             & WOQL().triple(i2,'known',i3)
+             & WOQL().triple(i3,'value',relationship))
+    results = client.query(query)
+    bindings = results['bindings']
+    relationships = []
+    for binding in bindings:
+        relationships.append(binding['relationship']['@value'])
+    return relationships
+
+def delete_relationships(client):
+    query = WOQL().triple("v:ID","rdf:type","@schema:PrecedingPolity")
+    result = client.query(query)
+    ids = []
+    for res in result['bindings']:
+        ids.append(res['ID'])
+    client.delete_document(ids)
 
 def run():
     csvpath = "equinox.csv"
@@ -871,27 +911,26 @@ def run():
         client.connect(team=team, use_token=use_token)
 
     # use when not recreating
-    # client.connect(db=dbid,team=team,use_token=use_token)
+    client.connect(db=dbid,team=team,use_token=use_token)
 
-    exists = client.get_database(dbid)
-    if exists:
-        client.delete_database(dbid, team=team)
+    # exists = client.get_database(dbid)
+    # if exists:
+    #     client.delete_database(dbid, team=team)
 
-    client.create_database(dbid,
-                           team,
-                           label=label,
-                           description=description,
-                           prefixes=prefixes)
+    # client.create_database(dbid,
+    #                        team,
+    #                        label=label,
+    #                        description=description,
+    #                        prefixes=prefixes)
 
-    # client.delete_database(dbid, team=team, force=True)
-
-    schema = infer_schema(csvpath)
-    schema_objects = basic_schema + schema.dump_schema()
-    #print(json.dumps(schema_objects, indent=4))
-    import_schema(client,schema_objects)
-    objects = load_data(csvpath,schema)
-    # print(json.dumps(objects, indent=4))
-    import_data(client,objects)
+    # schema = infer_schema(csvpath)
+    # schema_objects = basic_schema + schema.dump_schema()
+    # #print(json.dumps(schema_objects, indent=4))
+    # import_schema(client,schema_objects)
+    # objects = load_data(csvpath,schema)
+    # # print(json.dumps(objects, indent=4))
+    # import_data(client,objects)
+    #delete_relationships(client)
     connect_polities(client,csvpath)
 
 if __name__ == "__main__":
