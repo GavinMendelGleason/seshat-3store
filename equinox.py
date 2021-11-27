@@ -316,11 +316,6 @@ basic_schema = [
       'polity' : 'Polity'
      },
 
-    { '@type' : 'Class',
-      '@id' : 'SuccedingPolity',
-      'succeding' : 'Polity',
-      'polity' : 'Polity'
-     }
 ]
 
 def date_range_object(date_string):
@@ -846,12 +841,12 @@ def connect_polities(client,csvpath):
                         results = client.update_document(document)
                         print(f"adding preceding: {polity}")
                     elif variable == 'succeeding (quasi)polity':
-                        document = { '@id' : f"SuccedingPolity/{polity}_{other_polity}",
-                                     '@type' : 'SuccedingPolity',
-                                     'succeding' : other_polity_uri,
-                                     'polity' : polity_uri }
+                        document = { '@id' : f"PrecedingPolity/{other_polity}_{polity}",
+                                     '@type' : 'PrecedingPolity',
+                                     'preceding' : polity_uri,
+                                     'polity' : other_polity_uri }
                         results = client.update_document(document)
-                        print(f"adding preceding: {polity}")
+                        print(f"adding succeding: {polity}")
 
 def run():
     csvpath = "equinox.csv"
@@ -876,7 +871,7 @@ def run():
         client.connect(team=team, use_token=use_token)
 
     # use when not recreating
-    #client.connect(db=dbid,team=team,use_token=use_token)
+    # client.connect(db=dbid,team=team,use_token=use_token)
 
     exists = client.get_database(dbid)
     if exists:
