@@ -107,18 +107,6 @@ basic_schema = [
       ]
      },
 
-    { '@type' : 'Enum',
-      '@id' : 'LineageType',
-      '@value' : [
-          'continuity',
-          'hostile',
-          'disruption/continuity',
-          'elite migration',
-          'population migration',
-          'cultural assimilation'
-      ]
-     },
-
     { '@type' : 'Class',
       '@id' : 'TemporalScope',
       '@abstract' : [],
@@ -131,7 +119,7 @@ basic_schema = [
       '@key' : {'@type' : 'Lexical',
                 '@fields' : [ 'name' ]},
       'name' : 'xsd:string',
-      'alternative names' : {'@type' : 'Set',
+      'alternative_names' : {'@type' : 'Set',
                              '@class' : 'xsd:string' },
       'location' : {'@type' : 'Optional',
                     '@class' : 'GeoCoordinate'}
@@ -313,11 +301,16 @@ basic_schema = [
     { '@type' : 'Enum',
       '@id' : 'PrecedingPolityRelationship',
       '@value' : [
-          "continuity",
-          "disruption",
-          "elite migration",
-          "cultural assimilation",
-          "indigenous revolt",
+          'continuity',
+          'hostile',
+          'population migration',
+          'replacement',
+          'continuity',
+          'disruption',
+          'vassalage',
+          'elite migration',
+          'cultural assimilation',
+          'indigenous revolt',
       ]
      },
 
@@ -911,26 +904,27 @@ def run():
         client.connect(team=team, use_token=use_token)
 
     # use when not recreating
-    client.connect(db=dbid,team=team,use_token=use_token)
+    # client.connect(db=dbid,team=team,use_token=use_token)
 
-    # exists = client.get_database(dbid)
-    # if exists:
-    #     client.delete_database(dbid, team=team)
+    exists = client.get_database(dbid)
+    if exists:
+        client.delete_database(dbid, team=team)
 
-    # client.create_database(dbid,
-    #                        team,
-    #                        label=label,
-    #                        description=description,
-    #                        prefixes=prefixes)
+    client.create_database(dbid,
+                           team,
+                           label=label,
+                           description=description,
+                           prefixes=prefixes)
 
-    # schema = infer_schema(csvpath)
-    # schema_objects = basic_schema + schema.dump_schema()
-    # #print(json.dumps(schema_objects, indent=4))
-    # import_schema(client,schema_objects)
-    # objects = load_data(csvpath,schema)
-    # # print(json.dumps(objects, indent=4))
-    # import_data(client,objects)
-    #delete_relationships(client)
+    schema = infer_schema(csvpath)
+    schema_objects = basic_schema + schema.dump_schema()
+    #print(json.dumps(schema_objects, indent=4))
+    import_schema(client,schema_objects)
+    objects = load_data(csvpath,schema)
+    # print(json.dumps(objects, indent=4))
+    import_data(client,objects)
+    # If you need to start over with connections...
+    # delete_relationships(client)
     connect_polities(client,csvpath)
 
 if __name__ == "__main__":
