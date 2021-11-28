@@ -870,7 +870,7 @@ def get_previous_relationships(client,after_uri):
     bindings = results['bindings']
     relationships = []
     for binding in bindings:
-        relationships.append(binding['relationship']['@value'])
+        relationships.append(binding['relationship']['@value'].lower())
     return relationships
 
 def delete_relationships(client):
