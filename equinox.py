@@ -861,11 +861,8 @@ def connect_polities(client,csvpath):
                     print(f"adding preceding: {before} => {after}")
 
 def get_previous_relationships(client,after_uri):
-    relationship,i1,i2,i3 = WOQL().vars('relationship', 'i1', 'i2', 'i3')
-    query = (WOQL().triple(after_uri,'general_variables', i1)
-             & WOQL().triple(i1,'relationship_to_preceding_%28quasi%29polity',i2)
-             & WOQL().triple(i2,'known',i3)
-             & WOQL().triple(i3,'value',relationship))
+    relationship = WOQL().vars('relationship')
+    query = WOQL().path(after_uri,'general_variables,relationship_to_preceding_%28quasi%29polity,known,value', relationship)
     results = client.query(query)
     bindings = results['bindings']
     relationships = []
@@ -925,6 +922,7 @@ def run():
     import_data(client,objects)
     # If you need to start over with connections...
     # delete_relationships(client)
+
     connect_polities(client,csvpath)
 
 if __name__ == "__main__":
